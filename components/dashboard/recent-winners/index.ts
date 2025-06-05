@@ -1,0 +1,1 @@
+export { default as RecentWinners } from './RecentWinners.vue'

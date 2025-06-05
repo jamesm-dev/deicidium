@@ -1,0 +1,1 @@
+export { default as RecentMembers } from './RecentMembers.vue'
