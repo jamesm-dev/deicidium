@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Calendar, Ellipsis, Home, Inbox, Settings2 } from "lucide-vue-next"
+import { Calendar, Home, Inbox, Settings2, LogOut } from "lucide-vue-next"
 import {
   Sidebar,
   SidebarContent,
@@ -87,9 +87,9 @@ const otherItems = [
 
             <SidebarMenuItem>
               <SidebarMenuButton asChild>
-                <NuxtLink href="#">
-                  <Ellipsis />
-                  <span>More</span>
+                <NuxtLink href="/auth/logout">
+                  <LogOut />
+                  <span>Logout</span>
                 </NuxtLink>
               </SidebarMenuButton>
             </SidebarMenuItem>
