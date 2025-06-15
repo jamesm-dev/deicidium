@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Calendar, Home, Inbox, Settings2, LogOut } from "lucide-vue-next"
+import { Calendar, Home, Settings2, LogOut, User } from "lucide-vue-next"
 import {
   Sidebar,
   SidebarContent,
@@ -11,22 +11,25 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
+import { useGuilds } from '@/composables/useGuilds'
+
+const { guilds } = useGuilds()
 
 // Menu items.  
 const managementItems = [
   {
     title: "Dashboard",
-    url: "#",
+    url: "/",
     icon: Home,
   },
   {
     title: "Members",
-    url: "#",
-    icon: Inbox,
+    url: "/members",
+    icon: User,
   },
   {
     title: "Events",
-    url: "#",
+    url: "/events",
     icon: Calendar,
   },
 ];
@@ -45,18 +48,18 @@ const otherItems = [
     <SidebarHeader>
       <div class="flex items-center gap-2">
         <div class="flex justify-center items-center bg-neutral-400/50 rounded size-14 aspect-square text-xl">
-          ⚔️
+          {{ guilds?.[0]?.name ? '⚔️' : '💀' }}
         </div>
 
         <div class="flex flex-col">
-          <span class="font-semibold text-lg leading-tight">Deicidium</span>
-          <span class="text-neutral-500 text-sm">SEA104 Knight</span>
+          <span class="font-semibold text-lg leading-tight">{{ guilds?.[0]?.name ?? '—' }}</span>
+          <span class="text-neutral-500 text-sm">{{ guilds?.[0]?.server ?? '—' }}</span>
         </div>
       </div>
     </SidebarHeader>
 
     <SidebarContent>
-      <SidebarGroup>
+      <SidebarGroup v-if="Boolean(guilds?.[0]?.name)">
         <SidebarGroupLabel>Management</SidebarGroupLabel>
         <SidebarGroupContent>
           <SidebarMenu>
@@ -76,14 +79,16 @@ const otherItems = [
         <SidebarGroupLabel>Settings</SidebarGroupLabel>
         <SidebarGroupContent>
           <SidebarMenu>
-            <SidebarMenuItem v-for="item in otherItems" :key="item.title">
-              <SidebarMenuButton asChild>
-                <NuxtLink :href="item.url">
-                  <component :is="item.icon" />
-                  <span>{{ item.title }}</span>
-                </NuxtLink>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
+            <template v-if="Boolean(guilds?.[0]?.name)">
+              <SidebarMenuItem v-for="item in otherItems" :key="item.title">
+                <SidebarMenuButton asChild>
+                  <NuxtLink :href="item.url">
+                    <component :is="item.icon" />
+                    <span>{{ item.title }}</span>
+                  </NuxtLink>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </template>
 
             <SidebarMenuItem>
               <SidebarMenuButton asChild>

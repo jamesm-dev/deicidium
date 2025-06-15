@@ -70,7 +70,7 @@ const columns = [
   columnHelper.accessor('name', {
     header: ({ column }) => {
       return h(Button, {
-        class: '!px-0',
+        class: '!px-0 !bg-transparent !text-white',
         variant: 'ghost',
         onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
       }, () => ['Name', h(ChevronsUpDown, { class: 'ml-2 max-w-[10px] max-h-[10px]', })])
@@ -78,11 +78,11 @@ const columns = [
     cell: ({ row }) => h('div', { class: 'min-w-[200px]' }, row.getValue('name')),
   }),
   columnHelper.accessor('class', {
-    header: () => h('div', { class: '' }, 'Class'),
+    header: () => h('div', { class: '!px-0 !bg-transparent !text-white' }, 'Class'),
     cell: ({ row }) => h('div', { class: '' }, row.getValue('class')),
   }),
   columnHelper.accessor('tags', {
-    header: 'Tags',
+    header: () => h('div', { class: '!px-0 !bg-transparent !text-white' }, 'Tags'),
     cell: ({ row }) => h('div', { class: 'flex flex-wrap gap-2' }, (row.getValue('tags') as string[]).map((tag) => {
       const formattedTag = (param: string) => {
         if (param === 'frozen tear') return 'FT'
@@ -114,14 +114,14 @@ const table = useVueTable({
 <template>
   <div class="w-full">
     <div class="flex items-center gap-2">
-      <Input class="max-w-sm" placeholder="Search members..."
+      <Input class="bg-white border max-w-sm" placeholder="Search members..."
         :model-value="table.getColumn('name')?.getFilterValue() as string"
         @update:model-value=" table.getColumn('name')?.setFilterValue($event)" />
     </div>
 
-    <div class="mt-2.5">
+    <div class="mt-4">
       <Table>
-        <TableHeader>
+        <TableHeader class="bg-primary text-white">
           <TableRow v-for="headerGroup in table.getHeaderGroups()" :key="headerGroup.id">
             <TableHead v-for="header in headerGroup.headers" :key="header.id" :data-pinned="header.column.getIsPinned()"
               :class="cn(

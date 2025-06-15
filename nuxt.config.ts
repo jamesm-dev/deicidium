@@ -6,6 +6,28 @@ export default defineNuxtConfig({
 
   devtools: { enabled: true },
 
+  app: {
+    head: {
+      title: 'Deicidium — Guild Management',
+      meta: [
+        {
+          name: 'viewport',
+          content: 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no',
+        },
+        {
+          name: 'description',
+          content: 'Night Crows Guild Management and Guild Loot Management dashboard for the Night Crows guilds.'
+        }
+      ],
+      link: [
+        {
+          rel: 'icon',
+          href: '/favicon.ico',
+        },
+      ],
+    }
+  },
+
   modules: [
     '@nuxt/eslint',
     '@nuxt/fonts',
