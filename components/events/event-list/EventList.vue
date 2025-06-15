@@ -1,14 +1,15 @@
 <script setup lang="ts">
-import type { SortingState } from '@tanstack/vue-table'
+import type { ColumnFiltersState, SortingState } from '@tanstack/vue-table'
 import {
   createColumnHelper,
   FlexRender,
   getCoreRowModel,
+  getFilteredRowModel,
   getPaginationRowModel,
   getSortedRowModel,
   useVueTable,
 } from '@tanstack/vue-table'
-import { ChevronLeft, ChevronRight, ChevronsUpDown } from 'lucide-vue-next'
+import { ChevronLeft, ChevronRight, ChevronsUpDown, EllipsisVertical, Pencil, Trash2 } from 'lucide-vue-next'
 
 import { h, ref } from 'vue'
 import { cn, valueUpdater } from '@/lib/utils'
@@ -22,91 +23,112 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import { Skeleton } from '@/components/ui/skeleton'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import type { DungeonEvent } from '@/composables/useEvents'
 
-export interface Payment {
-  id: string
-  class: string
-  name: string
-  datetime: string
-}
+const props = defineProps<{
+  onEventUpdate?: (event: DungeonEvent) => void
+}>()
 
-const data: Payment[] = [
-  {
-    id: 'm5gr84i9',
-    class: 'Grand General',
-    name: 'jepaninja',
-    datetime: '2025-01-01T00:00:00.000Z',
-  },
-  {
-    id: '3u1reuv4',
-    class: 'Grand General',
-    name: 'Trafalgar',
-    datetime: '2025-01-01T00:00:00.000Z',
-  },
-  {
-    id: 'derv1ws0',
-    class: 'Grand General',
-    name: 'NitroZeus',
-    datetime: '2025-01-01T00:00:00.000Z',
-  },
-  {
-    id: '5kma53ae',
-    class: 'Grand General',
-    name: '禍Calamity',
-    datetime: '2025-01-01T00:00:00.000Z',
-  },
-  {
-    id: 'bhqecj4p',
-    class: 'Grand General',
-    name: 'Japayuki',
-    datetime: '2025-01-01T00:00:00.000Z',
-  },
-]
+const { events, isLoading, refetch } = useEvents()
 
-const columnHelper = createColumnHelper<Payment>()
+const columnHelper = createColumnHelper<DungeonEvent>()
 
 const columns = [
-  columnHelper.accessor('name', {
+  columnHelper.accessor('type', {
     header: ({ column }) => {
       return h(Button, {
         class: '!px-0 !bg-transparent !text-white',
         variant: 'ghost',
         onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
-      }, () => ['Name', h(ChevronsUpDown, { class: 'ml-2 max-w-[10px] max-h-[10px]', })])
+      }, () => ['Dungeon', h(ChevronsUpDown, { class: 'ml-2 max-w-[10px] max-h-[10px]', })])
     },
-    cell: ({ row }) => h('div', { class: 'min-w-[200px]' }, row.getValue('name')),
+    cell: ({ row }) => h('div', { class: 'min-w-[200px]' }, row.getValue('type')),
   }),
-  columnHelper.accessor('class', {
-    header: () => h('div', { class: '!px-0 !bg-transparent !text-white' }, 'Class'),
-    cell: ({ row }) => h('div', { class: '' }, row.getValue('class')),
-  }),
-  columnHelper.accessor('datetime', {
+  columnHelper.accessor('participants', {
     header: ({ column }) => {
       return h(Button, {
         class: '!px-0 !bg-transparent !text-white',
         variant: 'ghost',
         onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
-      }, () => ['Joined At', h(ChevronsUpDown, { class: 'ml-2 max-w-[10px] max-h-[10px]', })])
+      }, () => ['Participants', h(ChevronsUpDown, { class: 'ml-2 max-w-[10px] max-h-[10px]', })])
     },
-    cell: ({ row }) => h('div', { class: '' }, new Date(row.getValue('datetime')).toLocaleDateString('en-US', {
+    cell: ({ row }) => h('div', { class: '' }, row.getValue('participants')),
+  }),
+  columnHelper.accessor('created_at', {
+    header: ({ column }) => {
+      return h(Button, {
+        class: '!px-0 !bg-transparent !text-white',
+        variant: 'ghost',
+        onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
+      }, () => ['Completed At', h(ChevronsUpDown, { class: 'ml-2 max-w-[10px] max-h-[10px]', })])
+    },
+    cell: ({ row }) => h('div', { class: '' }, new Date(row.getValue('created_at')).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'long',
       day: 'numeric',
     })),
   }),
+  columnHelper.display({
+    id: 'actions',
+    header: () => h('div', { class: 'text-center text-white' }, ''),
+    cell: ({ row }) => h('div', { class: 'w-full flex items-center justify-center' }, [
+      h(DropdownMenu, {}, {
+        default: () => [
+          h(DropdownMenuTrigger, {}, () =>
+            h(Button, {
+              variant: 'ghost',
+              size: 'icon',
+            }, () => h(EllipsisVertical, { class: 'w-4 h-4' }))
+          ),
+          h(DropdownMenuContent, {}, () => [
+            h(DropdownMenuItem, {
+              onClick: () => {
+                props.onEventUpdate?.(row.original)
+              },
+            }, () => [
+              h(Pencil, { class: 'mr-2 h-4 w-4' }),
+              'Edit'
+            ]),
+            h(DropdownMenuItem, {
+              class: 'text-red-600',
+              onClick: () => {
+                // TODO: Implement delete functionality
+                console.log('Delete event:', row.original)
+                refetch()
+              },
+            }, () => [
+              h(Trash2, { class: 'mr-2 h-4 w-4' }),
+              'Delete'
+            ]),
+          ]),
+        ],
+      }),
+    ]),
+  }),
 ]
 
 const sorting = ref<SortingState>([])
+const columnFilters = ref<ColumnFiltersState>([])
 
 const table = useVueTable({
-  data,
+  data: events,
   columns,
   getCoreRowModel: getCoreRowModel(),
   getPaginationRowModel: getPaginationRowModel(),
   getSortedRowModel: getSortedRowModel(),
+  getFilteredRowModel: getFilteredRowModel(),
   onSortingChange: updaterOrValue => valueUpdater(updaterOrValue, sorting),
+  onColumnFiltersChange: updaterOrValue => valueUpdater(updaterOrValue, columnFilters),
   state: {
     get sorting() { return sorting.value },
+    get columnFilters() { return columnFilters.value },
   },
 })
 </script>
@@ -114,9 +136,9 @@ const table = useVueTable({
 <template>
   <div class="w-full">
     <div class="flex items-center gap-2">
-      <Input class="bg-white border max-w-sm" placeholder="Search members..."
-        :model-value="table.getColumn('name')?.getFilterValue() as string"
-        @update:model-value=" table.getColumn('name')?.setFilterValue($event)" />
+      <Input class="bg-white border max-w-sm" placeholder="Search events..."
+        :model-value="table.getColumn('type')?.getFilterValue() as string"
+        @update:model-value="table.getColumn('type')?.setFilterValue($event)" />
     </div>
 
     <div class="mt-4">
@@ -135,7 +157,14 @@ const table = useVueTable({
         </TableHeader>
 
         <TableBody>
-          <template v-if="table.getRowModel().rows?.length">
+          <template v-if="isLoading">
+            <TableRow v-for="i in 5" :key="i">
+              <TableCell v-for="j in columns.length" :key="j">
+                <Skeleton class="w-[250px] h-4" />
+              </TableCell>
+            </TableRow>
+          </template>
+          <template v-else-if="table.getRowModel().rows?.length">
             <template v-for="row in table.getRowModel().rows" :key="row.id">
               <TableRow :data-state="row.getIsSelected() && 'selected'">
                 <TableCell v-for="cell in row.getVisibleCells()" :key="cell.id" :data-pinned="cell.column.getIsPinned()"

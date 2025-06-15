@@ -3,31 +3,40 @@ import { RecentWinners } from '@/components/dashboard/recent-winners';
 import { RecentMembers } from '@/components/dashboard/recent-members';
 import { Button } from '@/components/ui/button';
 
-
 </script>
 
 <template>
   <div class="flex flex-col gap-2 mx-auto pt-4 container">
     <div class="gap-x-4 gap-y-10 grid grid-cols-12">
-      <div class="flex flex-col gap-2 col-span-6 bg-neutral-100/50 p-4 rounded">
-        <span class="font-mono font-semibold text-neutral-500 text-sm">
-          Recent Winners
-        </span>
+      <div class="flex flex-col gap-2 col-span-6">
+        <div class="flex flex-col">
+          <h1 class="font-semibold text-xl">Loot Winners</h1>
+          <span class="font-mono font-semibold text-neutral-500 text-sm">
+            Latest guild loot winners
+          </span>
+        </div>
 
-        <RecentWinners />
+        <div class="bg-neutral-400/10 mt-4 p-10">
+          <RecentWinners />
+        </div>
       </div>
 
-      <div class="flex flex-col gap-2 col-span-6 bg-neutral-100/50 p-4 rounded">
-        <span class="font-mono font-semibold text-neutral-500 text-sm">
-          Recent Members
-        </span>
+      <div class="flex flex-col gap-2 col-span-6">
+        <div class="flex flex-col">
+          <h1 class="font-semibold text-xl">New Members</h1>
+          <span class="font-mono font-semibold text-neutral-500 text-sm">
+            Latest guild members
+          </span>
+        </div>
 
-        <RecentMembers />
+        <div class="bg-neutral-400/10 mt-4 p-10">
+          <RecentMembers />
+        </div>
       </div>
 
       <div class="gap-4 grid grid-cols-12 col-span-12">
         <div class="flex flex-col gap-4 col-span-4">
-          <Button class="w-full min-h-[100px]" variant="default">
+          <Button class="w-full min-h-[150px]" variant="default">
             GET Frozen Tear Eligible
           </Button>
 
@@ -37,7 +46,7 @@ import { Button } from '@/components/ui/button';
         </div>
 
         <div class="flex flex-col gap-4 col-span-4">
-          <Button class="w-full min-h-[100px]" variant="default">
+          <Button class="w-full min-h-[150px]" variant="default">
             GET Rare Scroll Eligible
           </Button>
 
@@ -47,7 +56,7 @@ import { Button } from '@/components/ui/button';
         </div>
 
         <div class="flex flex-col gap-4 col-span-4">
-          <Button class="w-full min-h-[100px]" variant="default">
+          <Button class="w-full min-h-[150px]" variant="default">
             GET Tier 2 Rare Item Eligible
           </Button>
 
