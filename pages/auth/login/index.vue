@@ -48,14 +48,10 @@ const onSubmit = handleSubmit(async (values) => {
 })
 
 const handleGoogleLogin = async () => {
-  // console.log(`${useRuntimeConfig().public.baseUrl}/auth/callback`)
-  // return
-
   const { error } = await auth.signInWithOAuth({
     provider: 'google',
     options: {
       redirectTo: `${useRuntimeConfig().public.baseUrl}/auth/callback`,
-      // redirectTo: 'http://localhost:3000/auth/callback',
     },
   })
 

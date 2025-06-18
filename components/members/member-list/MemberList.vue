@@ -9,7 +9,7 @@ import {
   getSortedRowModel,
   useVueTable,
 } from '@tanstack/vue-table'
-import { ChevronLeft, ChevronRight, ChevronsUpDown, EllipsisVertical, Pencil, Trash2 } from 'lucide-vue-next'
+import { ChevronLeft, ChevronRight, ChevronsUpDown, Crosshair, EllipsisVertical, Pencil, ShieldHalf, Swords, Trash2, Trophy } from 'lucide-vue-next'
 
 import { h, ref } from 'vue'
 import { cn, valueUpdater } from '@/lib/utils'
@@ -54,13 +54,7 @@ const columns = [
     cell: ({ row }) => h('div', { class: 'min-w-[200px]' }, row.getValue('name')),
   }),
   columnHelper.accessor('class', {
-    header: ({ column }) => {
-      return h(Button, {
-        class: '!px-0 !bg-transparent !text-white',
-        variant: 'ghost',
-        onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
-      }, () => ['Class', h(ChevronsUpDown, { class: 'ml-2 max-w-[10px] max-h-[10px]', })])
-    },
+    header: () => h('div', { class: '!px-0 !bg-transparent !text-white' }, 'Class'),
     cell: ({ row }) => h('div', { class: '' }, CLASSES[row.getValue('class') as keyof typeof CLASSES]),
   }),
   columnHelper.accessor('stat_atk', {
@@ -71,7 +65,13 @@ const columns = [
         onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
       }, () => ['Damage', h(ChevronsUpDown, { class: 'ml-2 max-w-[10px] max-h-[10px]', })])
     },
-    cell: ({ row }) => h('div', { class: '' }, row.getValue('stat_atk')),
+    cell: ({ row }) => {
+      const value = row.getValue('stat_atk')
+      return value !== 0 ? h('div', { class: 'flex items-center gap-2' }, [
+        h(Swords, { class: 'text-red-500 max-w-4 max-h-4' }),
+        h('span', { class: '' }, String(value)),
+      ]) : null
+    },
   }),
   columnHelper.accessor('stat_def', {
     header: ({ column }) => {
@@ -81,7 +81,13 @@ const columns = [
         onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
       }, () => ['Defense', h(ChevronsUpDown, { class: 'ml-2 max-w-[10px] max-h-[10px]', })])
     },
-    cell: ({ row }) => h('div', { class: '' }, row.getValue('stat_def')),
+    cell: ({ row }) => {
+      const value = row.getValue('stat_def')
+      return value !== 0 ? h('div', { class: 'flex items-center gap-2' }, [
+        h(ShieldHalf, { class: 'text-blue-500 max-w-4 max-h-4' }),
+        h('span', { class: '' }, String(value)),
+      ]) : null
+    },
   }),
   columnHelper.accessor('stat_acc', {
     header: ({ column }) => {
@@ -91,7 +97,13 @@ const columns = [
         onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
       }, () => ['Accuracy', h(ChevronsUpDown, { class: 'ml-2 max-w-[10px] max-h-[10px]', })])
     },
-    cell: ({ row }) => h('div', { class: '' }, row.getValue('stat_acc')),
+    cell: ({ row }) => {
+      const value = row.getValue('stat_acc')
+      return value !== 0 ? h('div', { class: 'flex items-center gap-2' }, [
+        h(Crosshair, { class: 'text-neutral-500 max-w-4 max-h-4' }),
+        h('span', { class: '' }, String(value)),
+      ]) : null
+    },
   }),
   columnHelper.accessor('growth_rate', {
     header: ({ column }) => {
@@ -101,7 +113,13 @@ const columns = [
         onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
       }, () => ['Growth Rate', h(ChevronsUpDown, { class: 'ml-2 max-w-[10px] max-h-[10px]', })])
     },
-    cell: ({ row }) => h('div', { class: '' }, Number(row.getValue('growth_rate')).toLocaleString('en-US')),
+    cell: ({ row }) => {
+      const value = row.getValue('growth_rate')
+      return value && value != 0 ? h('div', { class: 'flex items-center gap-2' }, [
+        h(Trophy, { class: 'text-yellow-500 max-w-4 max-h-4' }),
+        h('span', { class: '' }, Number(value).toLocaleString('en-US')),
+      ]) : null
+    },
   }),
   columnHelper.accessor('grade', {
     header: ({ column }) => {
@@ -119,7 +137,7 @@ const columns = [
         class: '!px-0 !bg-transparent !text-white',
         variant: 'ghost',
         onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
-      }, () => ['Joined At', h(ChevronsUpDown, { class: 'ml-2 max-w-[10px] max-h-[10px]', })])
+      }, () => ['Added On', h(ChevronsUpDown, { class: 'ml-2 max-w-[10px] max-h-[10px]', })])
     },
     cell: ({ row }) => h('div', { class: '' }, new Date(row.getValue('created_at')).toLocaleDateString('en-US', {
       year: 'numeric',
@@ -216,6 +234,7 @@ const table = useVueTable({
               </TableCell>
             </TableRow>
           </template>
+
           <template v-else-if="table.getRowModel().rows?.length">
             <template v-for="row in table.getRowModel().rows" :key="row.id">
               <TableRow :data-state="row.getIsSelected() && 'selected'">

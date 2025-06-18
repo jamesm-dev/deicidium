@@ -33,7 +33,7 @@ const formSchema = z.object({
   stat_atk: z.number().optional(),
   stat_def: z.number().optional(),
   stat_acc: z.number().optional(),
-  growth_rate: z.string().optional(),
+  growth_rate: z.number().optional(),
   grade: z.number().optional(),
 })
 
@@ -45,7 +45,7 @@ const { handleSubmit, errors, resetForm } = useForm({
     stat_atk: 0,
     stat_def: 0,
     stat_acc: 0,
-    growth_rate: '',
+    growth_rate: 0,
     grade: 0,
   },
 })
@@ -198,7 +198,7 @@ const onSubmit = handleSubmit(async (values) => {
           <FormItem class="flex flex-col gap-1 col-span-12">
             <FormLabel class="form-label">Growth Rate</FormLabel>
             <FormControl>
-              <Input type="text" v-bind="field" placeholder="Character Growth Rate" :disabled="isLoading" />
+              <Input type="number" v-bind="field" placeholder="Character Growth Rate" :disabled="isLoading" />
             </FormControl>
 
             <FormMessage>{{ errors.growth_rate }}</FormMessage>

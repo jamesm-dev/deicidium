@@ -35,7 +35,7 @@ const formSchema = z.object({
   stat_atk: z.number().optional(),
   stat_def: z.number().optional(),
   stat_acc: z.number().optional(),
-  growth_rate: z.string().optional(),
+  growth_rate: z.number().optional(),
   grade: z.number().optional(),
 })
 
@@ -47,7 +47,7 @@ const { handleSubmit, errors, resetForm, setFieldValue } = useForm({
     stat_atk: 0,
     stat_def: 0,
     stat_acc: 0,
-    growth_rate: '',
+    growth_rate: 0,
     grade: 0,
   },
 })
@@ -61,7 +61,7 @@ watch([() => props.member, () => props.open], ([newMember, isOpen]) => {
     setFieldValue('stat_atk', Number(newMember.stat_atk))
     setFieldValue('stat_def', Number(newMember.stat_def))
     setFieldValue('stat_acc', Number(newMember.stat_acc))
-    setFieldValue('growth_rate', newMember.growth_rate)
+    setFieldValue('growth_rate', Number(newMember.growth_rate))
   }
 }, { immediate: true })
 
@@ -115,7 +115,8 @@ const onSubmit = handleSubmit(async (values) => {
           <FormItem class="flex flex-col gap-1 col-span-12">
             <FormLabel class="form-label">Name</FormLabel>
             <FormControl>
-              <Input type="text" v-bind="field" placeholder="pisot" required :disabled="isLoading" />
+              <Input type="text" :model-value="member?.name || field.value" @update:modelValue="field.onChange"
+                placeholder="pisot" required :disabled="isLoading" />
             </FormControl>
 
             <FormMessage>{{ errors.name }}</FormMessage>
@@ -204,7 +205,7 @@ const onSubmit = handleSubmit(async (values) => {
           <FormItem class="flex flex-col gap-1 col-span-12">
             <FormLabel class="form-label">Growth Rate</FormLabel>
             <FormControl>
-              <Input type="text" :model-value="field.value" @update:modelValue="field.onChange"
+              <Input type="number" :model-value="field.value" @update:modelValue="field.onChange"
                 placeholder="Character Growth Rate" :disabled="isLoading" />
             </FormControl>
 

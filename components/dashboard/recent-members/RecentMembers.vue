@@ -1,14 +1,15 @@
 <script setup lang="ts">
-import type { SortingState } from '@tanstack/vue-table'
+import type { ColumnFiltersState, PaginationState, SortingState } from '@tanstack/vue-table'
 import {
   createColumnHelper,
   FlexRender,
   getCoreRowModel,
+  getFilteredRowModel,
   getPaginationRowModel,
   getSortedRowModel,
   useVueTable,
 } from '@tanstack/vue-table'
-import { ChevronLeft, ChevronRight, ChevronsUpDown } from 'lucide-vue-next'
+import { ChevronsUpDown } from 'lucide-vue-next'
 
 import { h, ref } from 'vue'
 import { cn, valueUpdater } from '@/lib/utils'
@@ -22,48 +23,11 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import { CLASSES } from '@/types/enum'
 
-export interface Payment {
-  id: string
-  class: string
-  name: string
-  datetime: string
-}
+const { members, isLoading } = useMembers({ sort: 'asc' })
 
-const data: Payment[] = [
-  {
-    id: 'm5gr84i9',
-    class: 'Grand General',
-    name: 'jepaninja',
-    datetime: '2025-01-01T00:00:00.000Z',
-  },
-  {
-    id: '3u1reuv4',
-    class: 'Grand General',
-    name: 'Trafalgar',
-    datetime: '2025-01-01T00:00:00.000Z',
-  },
-  {
-    id: 'derv1ws0',
-    class: 'Grand General',
-    name: 'NitroZeus',
-    datetime: '2025-01-01T00:00:00.000Z',
-  },
-  {
-    id: '5kma53ae',
-    class: 'Grand General',
-    name: '禍Calamity',
-    datetime: '2025-01-01T00:00:00.000Z',
-  },
-  {
-    id: 'bhqecj4p',
-    class: 'Grand General',
-    name: 'Japayuki',
-    datetime: '2025-01-01T00:00:00.000Z',
-  },
-]
-
-const columnHelper = createColumnHelper<Payment>()
+const columnHelper = createColumnHelper<Member>()
 
 const columns = [
   columnHelper.accessor('name', {
@@ -78,9 +42,9 @@ const columns = [
   }),
   columnHelper.accessor('class', {
     header: () => h('div', { class: '!px-0 !bg-transparent !text-white' }, 'Class'),
-    cell: ({ row }) => h('div', { class: '' }, row.getValue('class')),
+    cell: ({ row }) => h('div', { class: '' }, CLASSES[row.getValue('class') as keyof typeof CLASSES]),
   }),
-  columnHelper.accessor('datetime', {
+  columnHelper.accessor('created_at', {
     header: ({ column }) => {
       return h(Button, {
         class: '!px-0 !bg-transparent !text-white',
@@ -88,7 +52,7 @@ const columns = [
         onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
       }, () => ['Joined At', h(ChevronsUpDown, { class: 'ml-2 max-w-[10px] max-h-[10px]', })])
     },
-    cell: ({ row }) => h('div', { class: '' }, new Date(row.getValue('datetime')).toLocaleDateString('en-US', {
+    cell: ({ row }) => h('div', { class: '' }, new Date(row.getValue('created_at')).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'long',
       day: 'numeric',
@@ -97,16 +61,26 @@ const columns = [
 ]
 
 const sorting = ref<SortingState>([])
+const columnFilters = ref<ColumnFiltersState>([])
+const pagination = ref<PaginationState>({
+  pageIndex: 0,
+  pageSize: 6, // Set to 5 rows per page
+})
 
 const table = useVueTable({
-  data,
+  data: members,
   columns,
   getCoreRowModel: getCoreRowModel(),
   getPaginationRowModel: getPaginationRowModel(),
   getSortedRowModel: getSortedRowModel(),
+  getFilteredRowModel: getFilteredRowModel(),
   onSortingChange: updaterOrValue => valueUpdater(updaterOrValue, sorting),
+  onColumnFiltersChange: updaterOrValue => valueUpdater(updaterOrValue, columnFilters),
+  onPaginationChange: updaterOrValue => valueUpdater(updaterOrValue, pagination),
   state: {
     get sorting() { return sorting.value },
+    get columnFilters() { return columnFilters.value },
+    get pagination() { return pagination.value },
   },
 })
 </script>
@@ -135,7 +109,15 @@ const table = useVueTable({
         </TableHeader>
 
         <TableBody>
-          <template v-if="table.getRowModel().rows?.length">
+          <template v-if="isLoading">
+            <TableRow v-for="i in 5" :key="i">
+              <TableCell v-for="j in columns.length" :key="j">
+                <Skeleton class="w-[250px] h-4" />
+              </TableCell>
+            </TableRow>
+          </template>
+
+          <template v-else-if="table.getRowModel().rows?.length">
             <template v-for="row in table.getRowModel().rows" :key="row.id">
               <TableRow :data-state="row.getIsSelected() && 'selected'">
                 <TableCell v-for="cell in row.getVisibleCells()" :key="cell.id" :data-pinned="cell.column.getIsPinned()"
@@ -161,18 +143,6 @@ const table = useVueTable({
           </TableRow>
         </TableBody>
       </Table>
-    </div>
-
-    <div class="flex justify-end items-center space-x-2 py-4">
-      <div class="space-x-2">
-        <Button variant="outline" size="sm" :disabled="!table.getCanPreviousPage()" @click="table.previousPage()">
-          <ChevronLeft />
-        </Button>
-
-        <Button variant="outline" size="sm" :disabled="!table.getCanNextPage()" @click="table.nextPage()">
-          <ChevronRight />
-        </Button>
-      </div>
     </div>
   </div>
 </template>

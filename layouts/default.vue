@@ -42,7 +42,8 @@ const breadcrumbItems = computed(() => {
   <SidebarProvider>
     <AppSidebar />
 
-    <main class="flex flex-col gap-2 px-4 py-2 w-full">
+    <main class="flex flex-col gap-2 bg-contain bg-no-repeat bg-top px-4 py-2 w-full"
+      style="background-image: url('/assets/images/contents.webp');">
       <div class="flex items-center gap-2">
         <SidebarTrigger />
 
@@ -53,7 +54,7 @@ const breadcrumbItems = computed(() => {
             <template v-for="(item, index) in breadcrumbItems" :key="item.href">
               <BreadcrumbItem>
                 <template v-if="item.isCurrentPage">
-                  <BreadcrumbPage>{{ item.label }}</BreadcrumbPage>
+                  <BreadcrumbPage class="font-mono text-white text-base">{{ item.label }}</BreadcrumbPage>
                 </template>
                 <template v-else>
                   <BreadcrumbLink :href="item.href">

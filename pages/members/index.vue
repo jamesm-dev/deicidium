@@ -16,7 +16,7 @@ const handleMemberUpdate = () => {
   refetch()
 }
 
-const computedMember = computed(() => state.value.member)
+const computedMember = computed(() => state.value.member ?? undefined)
 
 </script>
 
@@ -24,7 +24,7 @@ const computedMember = computed(() => state.value.member)
   <div class="flex flex-col gap-2 mx-auto pt-4 container">
     <div class="flex justify-between items-center">
       <div class="flex flex-col">
-        <h1 class="font-semibold text-xl">Guild Members</h1>
+        <h1 class="font-semibold text-white text-3xl">Guild Members</h1>
         <span class="font-mono font-semibold text-neutral-500 text-sm">
           Manage your guild members
         </span>
@@ -36,7 +36,7 @@ const computedMember = computed(() => state.value.member)
       </Button>
     </div>
 
-    <div class="bg-neutral-400/10 mt-4 p-10">
+    <div class="mt-10">
       <MemberList :on-member-update="(member) => {
         state.memberUpdate = true
         state.member = member
@@ -44,7 +44,7 @@ const computedMember = computed(() => state.value.member)
     </div>
 
     <DialogMemberCreate :open="state.memberCreate" @toggle="state.memberCreate = !state.memberCreate" />
-    <DialogMemberUpdate :open="state.memberUpdate" :member="computedMember ?? undefined" @toggle="handleMemberUpdate" />
+    <DialogMemberUpdate :open="state.memberUpdate" :member="computedMember" @toggle="handleMemberUpdate" />
   </div>
 </template>
 

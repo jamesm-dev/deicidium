@@ -7,6 +7,7 @@ export interface Guild {
   intro: string
   region: string
   server: string
+  wheel_key: string
 }
 
 export interface UserGuild {
@@ -24,7 +25,7 @@ export function useGuilds() {
 
       const { data, error } = await supabase
         .from('user_guilds')
-        .select(`guilds (id, name, intro, region, server)`)
+        .select(`guilds (id, name, intro, region, server, wheel_key)`)
         .eq('user_id', user.value.id) as { data: UserGuild[] | null, error: Error | null }
 
       if (error) {

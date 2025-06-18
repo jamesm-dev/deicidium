@@ -25,9 +25,9 @@ const computedEvent = computed(() => state.value.event)
   <div class="flex flex-col gap-2 mx-auto pt-4 container">
     <div class="flex justify-between items-center">
       <div class="flex flex-col">
-        <h1 class="font-semibold text-xl">Guild Members</h1>
+        <h1 class="font-semibold text-white text-3xl">Guild Events</h1>
         <span class="font-mono font-semibold text-neutral-500 text-sm">
-          Manage your guild members
+          Manage your guild events
         </span>
       </div>
 
@@ -37,7 +37,7 @@ const computedEvent = computed(() => state.value.event)
       </Button>
     </div>
 
-    <div class="bg-neutral-400/10 mt-4 p-10">
+    <div class="mt-10">
       <EventList :on-event-update="(event) => {
         state.eventUpdate = true
         state.event = event

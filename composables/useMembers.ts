@@ -14,7 +14,12 @@ export interface Member {
   guild: string
 }
 
-export function useMembers() {
+interface UseMembersOptions {
+  limit?: number
+  sort?: 'asc' | 'desc' | 'none'
+}
+
+export function useMembers(options: UseMembersOptions = {}) {
   const user = useSupabaseUser()
   const supabase = useSupabaseClient()
 
@@ -36,14 +41,24 @@ export function useMembers() {
       }
 
       // Then get all members from that guild
-      const { data, error, count } = await supabase
+      let query = supabase
         .from('members')
         .select('*', { count: 'exact' })
-        .eq('guild', userGuild.guilds.id) as {
-          data: Member[] | null
-          error: Error | null
-          count: number | null
-        }
+        .eq('guild', userGuild.guilds.id)
+
+      if (options.sort && options.sort !== 'none') {
+        query = query.order('created_at', { ascending: options.sort === 'asc' })
+      }
+
+      if (options.limit && options.limit > 0) {
+        query = query.limit(options.limit)
+      }
+
+      const { data, error, count } = await query as {
+        data: Member[] | null
+        error: Error | null
+        count: number | null
+      }
 
       if (error) {
         console.error(error)

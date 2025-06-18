@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import type { SortingState } from '@tanstack/vue-table'
+import type { ColumnFiltersState, SortingState, PaginationState } from '@tanstack/vue-table'
 import {
   createColumnHelper,
   FlexRender,
   getCoreRowModel,
+  getFilteredRowModel,
   getPaginationRowModel,
   getSortedRowModel,
   useVueTable,
@@ -12,6 +13,7 @@ import { ChevronLeft, ChevronRight, ChevronsUpDown } from 'lucide-vue-next'
 
 import { h, ref } from 'vue'
 import { cn, valueUpdater } from '@/lib/utils'
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -22,49 +24,18 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { Badge } from '@/components/ui/badge'
+import { Skeleton } from '@/components/ui/skeleton'
+import { CLASSES } from '@/types/enum'
 
-export interface Payment {
-  id: string
-  class: string
-  name: string
+interface MemberWithTags extends Member {
   tags: string[]
 }
 
-const data: Payment[] = [
-  {
-    id: 'm5gr84i9',
-    class: 'Grand General',
-    name: 'jepaninja',
-    tags: ['frozen tear', 'rare scroll', 'tier 2 rare item'],
-  },
-  {
-    id: '3u1reuv4',
-    class: 'Grand General',
-    name: 'Trafalgar',
-    tags: ['frozen tear', 'rare scroll', 'tier 2 rare item'],
-  },
-  {
-    id: 'derv1ws0',
-    class: 'Grand General',
-    name: 'NitroZeus',
-    tags: ['frozen tear', 'rare scroll', 'tier 2 rare item'],
-  },
-  {
-    id: '5kma53ae',
-    class: 'Grand General',
-    name: '禍Calamity',
-    tags: ['frozen tear', 'rare scroll', 'tier 2 rare item'],
-  },
-  {
-    id: 'bhqecj4p',
-    class: 'Grand General',
-    name: 'Japayuki',
-    tags: ['frozen tear', 'rare scroll', 'tier 2 rare item'],
-  },
-]
+const { members, isLoading } = useMembers()
 
-const columnHelper = createColumnHelper<Payment>()
+const membersWithTags = computed(() => members.value.map((member: Member) => ({ ...member, tags: ['frozen tear', 'rare scroll', 'tier 2 rare item'] })))
+
+const columnHelper = createColumnHelper<MemberWithTags>()
 
 const columns = [
   columnHelper.accessor('name', {
@@ -79,11 +50,11 @@ const columns = [
   }),
   columnHelper.accessor('class', {
     header: () => h('div', { class: '!px-0 !bg-transparent !text-white' }, 'Class'),
-    cell: ({ row }) => h('div', { class: '' }, row.getValue('class')),
+    cell: ({ row }) => h('div', { class: '' }, CLASSES[row.getValue('class') as keyof typeof CLASSES]),
   }),
   columnHelper.accessor('tags', {
     header: () => h('div', { class: '!px-0 !bg-transparent !text-white' }, 'Tags'),
-    cell: ({ row }) => h('div', { class: 'flex flex-wrap gap-2' }, (row.getValue('tags') as string[]).map((tag) => {
+    cell: ({ row }) => h('div', { class: 'flex flex-wrap gap-2' }, (row.getValue('tags') as string[] ?? []).map((tag) => {
       const formattedTag = (param: string) => {
         if (param === 'frozen tear') return 'FT'
         if (param === 'rare scroll') return 'SCROLL'
@@ -97,16 +68,26 @@ const columns = [
 ]
 
 const sorting = ref<SortingState>([])
+const columnFilters = ref<ColumnFiltersState>([])
+const pagination = ref<PaginationState>({
+  pageIndex: 0,
+  pageSize: 6, // Set to 5 rows per page
+})
 
 const table = useVueTable({
-  data,
+  data: membersWithTags,
   columns,
   getCoreRowModel: getCoreRowModel(),
   getPaginationRowModel: getPaginationRowModel(),
   getSortedRowModel: getSortedRowModel(),
+  getFilteredRowModel: getFilteredRowModel(),
   onSortingChange: updaterOrValue => valueUpdater(updaterOrValue, sorting),
+  onColumnFiltersChange: updaterOrValue => valueUpdater(updaterOrValue, columnFilters),
+  onPaginationChange: updaterOrValue => valueUpdater(updaterOrValue, pagination),
   state: {
     get sorting() { return sorting.value },
+    get columnFilters() { return columnFilters.value },
+    get pagination() { return pagination.value },
   },
 })
 </script>
@@ -135,7 +116,15 @@ const table = useVueTable({
         </TableHeader>
 
         <TableBody>
-          <template v-if="table.getRowModel().rows?.length">
+          <template v-if="isLoading">
+            <TableRow v-for="i in 5" :key="i">
+              <TableCell v-for="j in columns.length" :key="j">
+                <Skeleton class="w-[250px] h-4" />
+              </TableCell>
+            </TableRow>
+          </template>
+
+          <template v-else-if="table.getRowModel().rows?.length">
             <template v-for="row in table.getRowModel().rows" :key="row.id">
               <TableRow :data-state="row.getIsSelected() && 'selected'">
                 <TableCell v-for="cell in row.getVisibleCells()" :key="cell.id" :data-pinned="cell.column.getIsPinned()"
