@@ -9,7 +9,7 @@ import {
   getSortedRowModel,
   useVueTable,
 } from '@tanstack/vue-table'
-import { ChevronsUpDown } from 'lucide-vue-next'
+import { ChevronLeft, ChevronRight, ChevronsUpDown } from 'lucide-vue-next'
 
 import { h, ref } from 'vue'
 import { cn, valueUpdater } from '@/lib/utils'
@@ -25,7 +25,7 @@ import {
 } from '@/components/ui/table'
 import { CLASSES } from '@/types/enum'
 
-const { members, isLoading } = useMembers({ sort: 'asc' })
+const { members, isLoading } = useMembers({ sort: 'desc' })
 
 const columnHelper = createColumnHelper<Member>()
 
@@ -50,7 +50,7 @@ const columns = [
         class: '!px-0 !bg-transparent !text-white',
         variant: 'ghost',
         onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
-      }, () => ['Joined At', h(ChevronsUpDown, { class: 'ml-2 max-w-[10px] max-h-[10px]', })])
+      }, () => ['Added On', h(ChevronsUpDown, { class: 'ml-2 max-w-[10px] max-h-[10px]', })])
     },
     cell: ({ row }) => h('div', { class: '' }, new Date(row.getValue('created_at')).toLocaleDateString('en-US', {
       year: 'numeric',
@@ -143,6 +143,18 @@ const table = useVueTable({
           </TableRow>
         </TableBody>
       </Table>
+    </div>
+
+    <div class="flex justify-end items-center space-x-2 py-4">
+      <div class="space-x-2">
+        <Button variant="outline" size="sm" :disabled="!table.getCanPreviousPage()" @click="table.previousPage()">
+          <ChevronLeft />
+        </Button>
+
+        <Button variant="outline" size="sm" :disabled="!table.getCanNextPage()" @click="table.nextPage()">
+          <ChevronRight />
+        </Button>
+      </div>
     </div>
   </div>
 </template>

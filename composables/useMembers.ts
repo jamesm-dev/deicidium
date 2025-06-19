@@ -19,12 +19,17 @@ interface UseMembersOptions {
   sort?: 'asc' | 'desc' | 'none'
 }
 
+// Helper function to create consistent cache keys
+function createMembersCacheKey(userId: string | undefined, options: UseMembersOptions) {
+  return ['userMembers', userId, options]
+}
+
 export function useMembers(options: UseMembersOptions = {}) {
   const user = useSupabaseUser()
   const supabase = useSupabaseClient()
 
   const { data: members, ...rest } = useQuery({
-    queryKey: ['userMembers', user.value?.id],
+    queryKey: createMembersCacheKey(user.value?.id, options),
     queryFn: async () => {
       if (!user.value?.id) return { members: [], total: 0 }
 

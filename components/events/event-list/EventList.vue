@@ -67,7 +67,7 @@ const columns = [
         class: '!px-0 !bg-transparent !text-white',
         variant: 'ghost',
         onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
-      }, () => ['Completed At', h(ChevronsUpDown, { class: 'ml-2 max-w-[10px] max-h-[10px]', })])
+      }, () => ['Completed On', h(ChevronsUpDown, { class: 'ml-2 max-w-[10px] max-h-[10px]', })])
     },
     cell: ({ row }) => h('div', { class: '' }, new Date(row.getValue('created_at')).toLocaleDateString('en-US', {
       year: 'numeric',
