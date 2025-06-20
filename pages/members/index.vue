@@ -1,19 +1,46 @@
 <script setup lang="ts">
 import { MemberList } from '@/components/members/member-list';
 import { UserPlus } from 'lucide-vue-next';
+import { toast } from 'vue-sonner';
+
+const supabase = useSupabaseClient()
 
 const state = ref({
   memberCreate: false,
   memberUpdate: false,
+  memberDelete: false,
   member: null as Member | null,
 })
 
 const { refetch } = useMembers()
 
-const handleMemberUpdate = () => {
+const handleCloseUpdateDialog = () => {
   state.value.memberUpdate = false
   state.value.member = null
   refetch()
+}
+
+const handleLoadMember = (member: Member) => {
+  state.value.memberUpdate = true
+  state.value.member = member
+}
+
+const handleDeleteMember = async (member: Member) => {
+  // state.value.memberDelete = true
+  // state.value.member = member
+
+  const { error } = await supabase.from('members').delete().eq('id', member.id)
+
+  if (error) {
+    toast.error('Error deleting member', {
+      description: error.message,
+    })
+  } else {
+    toast.success('Member deleted', {
+      description: 'Member has been deleted.',
+    })
+    refetch()
+  }
 }
 
 const computedMember = computed(() => state.value.member ?? undefined)
@@ -37,14 +64,11 @@ const computedMember = computed(() => state.value.member ?? undefined)
     </div>
 
     <div class="mt-10">
-      <MemberList :on-member-update="(member) => {
-        state.memberUpdate = true
-        state.member = member
-      }" />
+      <MemberList :on-member-update="handleLoadMember" :on-member-delete="handleDeleteMember" />
     </div>
 
     <DialogMemberCreate :open="state.memberCreate" @toggle="state.memberCreate = !state.memberCreate" />
-    <DialogMemberUpdate :open="state.memberUpdate" :member="computedMember" @toggle="handleMemberUpdate" />
+    <DialogMemberUpdate :open="state.memberUpdate" :member="computedMember" @toggle="handleCloseUpdateDialog" />
   </div>
 </template>
 

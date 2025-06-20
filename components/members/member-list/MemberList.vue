@@ -36,9 +36,10 @@ import {
 
 const props = defineProps<{
   onMemberUpdate?: (member: Member) => void
+  onMemberDelete?: (member: Member) => void
 }>()
 
-const { members, isLoading, refetch } = useMembers()
+const { members, isLoading } = useMembers()
 
 const columnHelper = createColumnHelper<Member>()
 
@@ -159,20 +160,14 @@ const columns = [
           ),
           h(DropdownMenuContent, {}, () => [
             h(DropdownMenuItem, {
-              onClick: () => {
-                props.onMemberUpdate?.(row.original)
-              },
+              onClick: () => props.onMemberUpdate?.(row.original),
             }, () => [
               h(Pencil, { class: 'mr-2 h-4 w-4' }),
               'Edit'
             ]),
             h(DropdownMenuItem, {
               class: 'text-red-600',
-              onClick: () => {
-                // TODO: Implement delete functionality
-                console.log('Delete member:', row.original)
-                refetch()
-              },
+              onClick: () => props.onMemberDelete?.(row.original),
             }, () => [
               h(Trash2, { class: 'mr-2 h-4 w-4' }),
               'Delete'

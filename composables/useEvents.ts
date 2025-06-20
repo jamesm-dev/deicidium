@@ -1,6 +1,12 @@
 import { useQuery } from '@tanstack/vue-query'
 import { computed } from 'vue'
 
+export interface Participant {
+  id: string
+  name: string
+  enabled: boolean
+}
+
 export interface DungeonEvent {
   id: string
   type: string

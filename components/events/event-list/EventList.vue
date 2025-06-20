@@ -9,7 +9,7 @@ import {
   getSortedRowModel,
   useVueTable,
 } from '@tanstack/vue-table'
-import { ChevronLeft, ChevronRight, ChevronsUpDown, EllipsisVertical, Pencil, Trash2 } from 'lucide-vue-next'
+import { ChevronLeft, ChevronRight, ChevronsUpDown, EllipsisVertical, Pencil, Trash2, Users } from 'lucide-vue-next'
 
 import { h, ref } from 'vue'
 import { cn, valueUpdater } from '@/lib/utils'
@@ -31,14 +31,24 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import type { DungeonEvent } from '@/composables/useEvents'
+import { DUNGEONS } from '@/types/enum'
+import { Badge } from '@/components/ui/badge'
+import moment from 'moment'
+
+interface EventWithTags extends DungeonEvent {
+  tags: string[]
+}
 
 const props = defineProps<{
   onEventUpdate?: (event: DungeonEvent) => void
+  onEventDelete?: (event: DungeonEvent) => void
 }>()
 
-const { events, isLoading, refetch } = useEvents()
+const { events, isLoading } = useEvents()
 
-const columnHelper = createColumnHelper<DungeonEvent>()
+const eventsWithTags = computed(() => events.value.map((event: DungeonEvent) => ({ ...event, tags: ['frozen tear', 'rare scroll', 'tier 2 rare item'] })))
+
+const columnHelper = createColumnHelper<EventWithTags>()
 
 const columns = [
   columnHelper.accessor('type', {
@@ -49,7 +59,19 @@ const columns = [
         onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
       }, () => ['Dungeon', h(ChevronsUpDown, { class: 'ml-2 max-w-[10px] max-h-[10px]', })])
     },
-    cell: ({ row }) => h('div', { class: 'min-w-[200px]' }, row.getValue('type')),
+    cell: ({ row }) => h('div', { class: 'min-w-[200px]' }, DUNGEONS[row.getValue('type') as keyof typeof DUNGEONS]),
+    filterFn: (row, id, value) => {
+      const dungeonKey = row.getValue(id) as keyof typeof DUNGEONS
+      const dungeonName = DUNGEONS[dungeonKey]
+      return dungeonName.toLowerCase().includes(value.toLowerCase())
+    },
+    sortingFn: (rowA, rowB, columnId) => {
+      const dungeonKeyA = rowA.getValue(columnId) as keyof typeof DUNGEONS
+      const dungeonKeyB = rowB.getValue(columnId) as keyof typeof DUNGEONS
+      const dungeonNameA = DUNGEONS[dungeonKeyA]
+      const dungeonNameB = DUNGEONS[dungeonKeyB]
+      return dungeonNameA.localeCompare(dungeonNameB)
+    },
   }),
   columnHelper.accessor('participants', {
     header: ({ column }) => {
@@ -59,7 +81,45 @@ const columns = [
         onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
       }, () => ['Participants', h(ChevronsUpDown, { class: 'ml-2 max-w-[10px] max-h-[10px]', })])
     },
-    cell: ({ row }) => h('div', { class: '' }, row.getValue('participants')),
+    cell: ({ row }) => {
+      const participants = row.getValue('participants') as Array<Participant> ?? []
+      const enabledCount = participants.filter(participant => participant.enabled).length
+      const totalCount = participants.length
+      const percentage = totalCount > 0 ? (enabledCount / totalCount) * 100 : 0
+
+      let iconColor = 'text-green-500'
+
+      if (percentage < 40) {
+        iconColor = 'text-red-500'
+      } else if (percentage < 60) {
+        iconColor = 'text-yellow-500'
+      }
+
+      return h('div', { class: 'flex items-center gap-4' }, [
+        h(Users, { class: `${iconColor} max-w-4 max-h-4` }),
+        h('span', { class: '' }, `${enabledCount} / ${totalCount}`),
+      ])
+    },
+    sortingFn: (rowA, rowB, columnId) => {
+      const participantsA = rowA.getValue(columnId) as Array<Participant> ?? []
+      const participantsB = rowB.getValue(columnId) as Array<Participant> ?? []
+      const enabledCountA = participantsA.filter(participant => participant.enabled).length
+      const enabledCountB = participantsB.filter(participant => participant.enabled).length
+      return enabledCountA - enabledCountB
+    },
+  }),
+  columnHelper.accessor('tags', {
+    header: () => h('div', { class: '!px-0 !bg-transparent !text-white' }, 'Tags'),
+    cell: ({ row }) => h('div', { class: 'flex flex-wrap gap-2' }, (row.getValue('tags') as string[] ?? []).map((tag) => {
+      const formattedTag = (param: string) => {
+        if (param === 'frozen tear') return 'FT'
+        if (param === 'rare scroll') return 'SCROLL'
+        if (param === 'tier 2 rare item') return 'T2'
+        return param
+      }
+
+      return h(Badge, { class: 'font-mono text-[10px] uppercase' }, formattedTag(tag))
+    })),
   }),
   columnHelper.accessor('created_at', {
     header: ({ column }) => {
@@ -69,11 +129,7 @@ const columns = [
         onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
       }, () => ['Completed On', h(ChevronsUpDown, { class: 'ml-2 max-w-[10px] max-h-[10px]', })])
     },
-    cell: ({ row }) => h('div', { class: '' }, new Date(row.getValue('created_at')).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    })),
+    cell: ({ row }) => h('div', { class: '' }, moment(row.getValue('created_at')).format('MMM D, YYYY')),
   }),
   columnHelper.display({
     id: 'actions',
@@ -89,20 +145,14 @@ const columns = [
           ),
           h(DropdownMenuContent, {}, () => [
             h(DropdownMenuItem, {
-              onClick: () => {
-                props.onEventUpdate?.(row.original)
-              },
+              onClick: () => props.onEventUpdate?.(row.original),
             }, () => [
               h(Pencil, { class: 'mr-2 h-4 w-4' }),
               'Edit'
             ]),
             h(DropdownMenuItem, {
               class: 'text-red-600',
-              onClick: () => {
-                // TODO: Implement delete functionality
-                console.log('Delete event:', row.original)
-                refetch()
-              },
+              onClick: () => props.onEventDelete?.(row.original),
             }, () => [
               h(Trash2, { class: 'mr-2 h-4 w-4' }),
               'Delete'
@@ -118,7 +168,7 @@ const sorting = ref<SortingState>([])
 const columnFilters = ref<ColumnFiltersState>([])
 
 const table = useVueTable({
-  data: events,
+  data: eventsWithTags,
   columns,
   getCoreRowModel: getCoreRowModel(),
   getPaginationRowModel: getPaginationRowModel(),
@@ -164,6 +214,7 @@ const table = useVueTable({
               </TableCell>
             </TableRow>
           </template>
+
           <template v-else-if="table.getRowModel().rows?.length">
             <template v-for="row in table.getRowModel().rows" :key="row.id">
               <TableRow :data-state="row.getIsSelected() && 'selected'">
