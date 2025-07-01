@@ -16,12 +16,22 @@ const breadcrumbItems = computed(() => {
   const pathSegments = route.path.split('/').filter(Boolean);
   const items: BreadcrumbItem[] = [];
 
-  // Always add home as the first item
-  // items.push({
-  //   label: 'Dashboard',
-  //   href: '/',
-  //   isCurrentPage: pathSegments.length === 0
-  // });
+  // Special case: if path is /events/[eventId]/raffle, show "Events > Raffle"
+  if (pathSegments.length >= 3 &&
+    pathSegments[0] === 'events' &&
+    pathSegments[2] === 'raffle') {
+    items.push({
+      label: 'Events',
+      href: '/events',
+      isCurrentPage: false
+    });
+    items.push({
+      label: 'Raffle',
+      href: route.path,
+      isCurrentPage: true
+    });
+    return items;
+  }
 
   // Build up the path and add items for each segment
   let currentPath = '';

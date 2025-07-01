@@ -1,16 +1,21 @@
 <script setup lang="ts">
-import { EventList } from '@/components/events/event-list';
-import type { DungeonEvent } from '@/composables/useEvents';
+import { EventList } from '~/components/events';
 import { UserPlus } from 'lucide-vue-next';
 import { toast } from 'vue-sonner';
+import type { DungeonEvent } from '@/composables/useEvents';
 
 const supabase = useSupabaseClient()
 
-const state = ref({
+const state = ref<{
+  eventCreate: boolean,
+  eventUpdate: boolean,
+  eventDelete: boolean,
+  event: DungeonEvent | null,
+}>({
   eventCreate: false,
   eventUpdate: false,
   eventDelete: false,
-  event: null as DungeonEvent | null,
+  event: null,
 })
 
 const { refetch } = useEvents()
@@ -19,6 +24,10 @@ const handleCloseUpdateDialog = () => {
   state.value.eventUpdate = false
   state.value.event = null
   refetch()
+}
+
+const handleRaffleEvent = (event: DungeonEvent) => {
+  navigateTo(`/events/${event.id}/raffle`)
 }
 
 const handleLoadEvent = (event: DungeonEvent) => {
@@ -65,7 +74,7 @@ const computedEvent = computed(() => state.value.event ?? undefined)
     </div>
 
     <div class="mt-10">
-      <EventList :on-event-update="handleLoadEvent" :on-event-delete="handleDeleteEvent" />
+      <EventList :on-update="handleLoadEvent" :on-delete="handleDeleteEvent" :on-raffle="handleRaffleEvent" />
     </div>
 
     <DialogEventCreate :open="state.eventCreate" @toggle="state.eventCreate = !state.eventCreate" />

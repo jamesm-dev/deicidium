@@ -33,23 +33,17 @@ export function useMembers(options: UseMembersOptions = {}) {
     queryFn: async () => {
       if (!user.value?.id) return { members: [], total: 0 }
 
-      // First get the user's guild
-      const { data: userGuild, error: userGuildError } = await supabase
-        .from('user_guilds')
-        .select('guilds (id)')
-        .eq('user_id', user.value.id)
-        .single() as { data: UserGuild | null, error: Error | null }
-
-      if (userGuildError || !userGuild) {
-        console.error(userGuildError)
-        return { members: [], total: 0 }
-      }
-
-      // Then get all members from that guild
+      // Get members with guild join in a single query
       let query = supabase
         .from('members')
-        .select('*', { count: 'exact' })
-        .eq('guild', userGuild.guilds.id)
+        .select(`
+          *,
+          guilds!inner (
+            id,
+            user_guilds!inner (user_id)
+          )
+        `, { count: 'exact' })
+        .eq('guilds.user_guilds.user_id', user.value.id)
 
       if (options.sort && options.sort !== 'none') {
         query = query.order('created_at', { ascending: options.sort === 'asc' })
@@ -60,7 +54,7 @@ export function useMembers(options: UseMembersOptions = {}) {
       }
 
       const { data, error, count } = await query as {
-        data: Member[] | null
+        data: (Member & { guilds: { id: string, user_guilds: { user_id: string } } })[] | null
         error: Error | null
         count: number | null
       }

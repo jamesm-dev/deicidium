@@ -9,11 +9,12 @@ import type { DateValue } from '@internationalized/date'
 import { parseDate } from '@internationalized/date'
 import { DUNGEONS } from '@/types/enum'
 import { DatePicker } from '@/components/ui/date-picker'
-import type { DungeonEvent, Participant } from '@/composables/useEvents'
 import moment from 'moment'
+import type { Participant } from '@/types'
 
 const supabase = useSupabaseClient<Database>()
 const { guilds } = useGuilds()
+const { members } = useMembers()
 const { refetch } = useEvents()
 
 const props = defineProps({
@@ -21,10 +22,6 @@ const props = defineProps({
     type: Boolean,
     default: false
   },
-  event: {
-    type: Object as PropType<DungeonEvent>,
-    default: null,
-  }
 })
 
 const emit = defineEmits(['toggle'])
@@ -51,20 +48,6 @@ const { handleSubmit, errors, resetForm, setFieldValue } = useForm({
   },
 })
 
-// Watch both the member prop and dialog open state
-watch([() => props.event, () => props.open], ([newEvent, isOpen]) => {
-  if (newEvent && isOpen) {
-    setFieldValue('type', newEvent.type)
-    setFieldValue('date', newEvent.created_at)
-
-    participants.value = (newEvent.participants as unknown as Array<Participant>).map((participant: Participant) => ({
-      id: participant.id,
-      name: participant.name,
-      enabled: participant.enabled,
-    }))
-  }
-}, { immediate: true })
-
 const onSubmit = handleSubmit(async (values) => {
   isLoading.value = true
 
@@ -79,16 +62,16 @@ const onSubmit = handleSubmit(async (values) => {
   const { type, date } = values
 
 
-  const { error } = await supabase.from('events').update({
+  const { error } = await supabase.from('events').insert({
     guild: guilds.value[0].id,
     type,
-    created_at: date ?? new Date().toISOString(),
+    created_at: moment(date).toISOString(),
     participants: participants.value.map(({ id, name, enabled }) => ({
       id,
       name,
       enabled,
     })),
-  }).eq('id', props.event.id)
+  })
 
   if (error) {
     toast.error('Uh oh! Something went wrong.', {
@@ -99,8 +82,8 @@ const onSubmit = handleSubmit(async (values) => {
     return
   }
 
-  toast.success('Event Updated', {
-    description: 'Event has been updated.',
+  toast.success('New Event Created', {
+    description: 'New event has been created.',
   })
 
   isLoading.value = false
@@ -111,8 +94,7 @@ const onSubmit = handleSubmit(async (values) => {
 })
 
 const handleDateUpdate = (date: DateValue, onChange: (date: string) => void) => {
-  const dateNow = new Date().toISOString()
-  onChange(date ? `${date?.toString()}T${dateNow.split('T')[1]}` : '')
+  onChange(date ? moment(date.toString()).toISOString() : '')
 }
 
 const handleAddParticipant = (participant: Participant) => {
@@ -124,6 +106,22 @@ const handleRemoveParticipant = (participant: Participant) => {
   const updatedParticipants = participants.value?.map((p: Participant) => p.name === participant.name ? { ...p, enabled: !p.enabled } : p) || []
   participants.value = updatedParticipants
 }
+
+watch(members, (newMembers) => {
+  if (newMembers?.length) {
+    participants.value = newMembers.map(member => ({
+      id: member.id,
+      name: member.name,
+      enabled: true,
+    }))
+  }
+}, { immediate: true })
+
+watch(() => props.open, (newOpen) => {
+  if (newOpen) {
+    setFieldValue('date', moment().toISOString())
+  }
+})
 
 // Parse date string to DateValue for DatePicker
 const parseDateValue = (dateString: string): DateValue | undefined => {
@@ -152,7 +150,7 @@ const parseDateValue = (dateString: string): DateValue | undefined => {
           <FormItem class="flex flex-col gap-1 col-span-6">
             <FormLabel class="form-label">Dungeon Type</FormLabel>
             <FormControl>
-              <Select :model-value="field.value" @update:modelValue="field.onChange" :disabled="isLoading">
+              <Select v-bind="field" :disabled="isLoading">
                 <SelectTrigger class="w-full">
                   <SelectValue placeholder="Dungeon Type" />
                 </SelectTrigger>

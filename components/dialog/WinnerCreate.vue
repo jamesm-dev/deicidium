@@ -7,13 +7,18 @@ import { Loader2, Minus, Plus } from 'lucide-vue-next'
 import type { Database } from '@/types/database'
 import type { DateValue } from '@internationalized/date'
 import { parseDate } from '@internationalized/date'
-import { DUNGEONS } from '@/types/enum'
 import { DatePicker } from '@/components/ui/date-picker'
 import moment from 'moment'
+import type { Participant } from '@/types'
 
 const supabase = useSupabaseClient<Database>()
+
+const route = useRoute()
+const eventId = route.params.eventId as string
+
 const { guilds } = useGuilds()
 const { members } = useMembers()
+const { tags } = useTags()
 const { refetch } = useEvents()
 
 const props = defineProps({
@@ -35,15 +40,15 @@ const isLoading = ref(false)
 const participants = ref<Participant[]>([])
 
 const formSchema = z.object({
-  type: z.string().min(1, { message: 'Please enter a dungeon type' }),
+  tag: z.number().min(1, { message: 'Please enter a tag' }),
   date: z.string().min(1, { message: 'Please enter a date' }),
 })
 
 const { handleSubmit, errors, resetForm, setFieldValue } = useForm({
   validationSchema: toTypedSchema(formSchema),
   initialValues: {
-    type: '',
-    date: '',
+    tag: 0,
+    date: moment().toISOString(),
   },
 })
 
@@ -58,12 +63,12 @@ const onSubmit = handleSubmit(async (values) => {
     return
   }
 
-  const { type, date } = values
+  const { tag, date } = values
 
-
-  const { error } = await supabase.from('events').insert({
+  const { error } = await supabase.from('winners').insert({
     guild: guilds.value[0].id,
-    type,
+    event: eventId,
+    tag,
     created_at: moment(date).toISOString(),
     participants: participants.value.map(({ id, name, enabled }) => ({
       id,
@@ -81,8 +86,8 @@ const onSubmit = handleSubmit(async (values) => {
     return
   }
 
-  toast.success('New Event Created', {
-    description: 'New event has been created.',
+  toast.success('New Winners Added', {
+    description: 'New winners have been added.',
   })
 
   isLoading.value = false
@@ -138,37 +143,46 @@ const parseDateValue = (dateString: string): DateValue | undefined => {
   <Dialog v-model:open="dialogOpen">
     <DialogContent class="flex flex-col gap-8 p-10 rounded-none sm:max-w-4xl">
       <div class="flex flex-col">
-        <h1 class="font-semibold text-xl">Event Info</h1>
+        <h1 class="font-semibold text-xl">Raffle Info</h1>
         <span class="font-mono font-semibold text-neutral-500 text-sm">
-          Dungeon type and participants
+          Raffle type and winners
         </span>
       </div>
 
       <form class="gap-4 grid grid-cols-12 w-full" @submit.prevent="onSubmit">
-        <FormField v-slot="{ field }" name="type">
+        <FormField v-slot="{ field }" name="tag">
           <FormItem class="flex flex-col gap-1 col-span-6">
-            <FormLabel class="form-label">Dungeon Type</FormLabel>
+            <FormLabel class="form-label">Raffle Type</FormLabel>
             <FormControl>
               <Select v-bind="field" :disabled="isLoading">
                 <SelectTrigger class="w-full">
-                  <SelectValue placeholder="Dungeon Type" />
+                  <SelectValue placeholder="Raffle Type">
+                    {{tags.find(tag => tag.id === field.value)?.name || 'Raffle Type'}}
+                  </SelectValue>
                 </SelectTrigger>
 
                 <SelectContent>
-                  <SelectItem v-for="(label, value) in DUNGEONS" :key="value" :value="value">
-                    {{ label }}
+                  <SelectItem v-for="tag in tags" :key="tag.id" :value="tag.id">
+                    <div class="flex items-center gap-2.5">
+                      <span class="text-sm">{{ tag.name }}</span>
+
+                      <span class="flex justify-center items-center px-1.5 py-0.5 text-[10px] text-white"
+                        :style="{ backgroundColor: tag.color }">
+                        {{ tag.symbol }}
+                      </span>
+                    </div>
                   </SelectItem>
                 </SelectContent>
               </Select>
             </FormControl>
 
-            <FormMessage>{{ errors.type }}</FormMessage>
+            <FormMessage>{{ errors.tag }}</FormMessage>
           </FormItem>
         </FormField>
 
         <FormField v-slot="{ field }" name="date">
           <FormItem class="flex flex-col gap-1 col-span-6">
-            <FormLabel class="form-label">Dungeon Date</FormLabel>
+            <FormLabel class="form-label">Raffle Date</FormLabel>
             <FormControl>
               <DatePicker :initial-value="parseDateValue(field.value)"
                 @update="($event) => handleDateUpdate($event, field.onChange)" :disabled="isLoading" />
@@ -179,7 +193,7 @@ const parseDateValue = (dateString: string): DateValue | undefined => {
         </FormField>
 
         <div class="flex flex-col gap-1 col-span-12">
-          <p class="font-semibold text-sm">Participants ({{participants?.filter((participant: Participant) =>
+          <p class="font-semibold text-sm">Winners ({{participants?.filter((participant: Participant) =>
             participant.enabled).length}})</p>
 
           <div class="flex gap-4">
@@ -206,7 +220,14 @@ const parseDateValue = (dateString: string): DateValue | undefined => {
         </div>
 
         <div class="gap-4 grid grid-cols-12 col-span-12 mt-4">
-          <div class="col-span-6" />
+          <!-- <div class="col-span-6" /> -->
+          <Button class="flex items-center gap-2.5 col-span-6 py-5 w-full text-base" type="button" variant="outline"
+            :disabled="isLoading">
+            <span v-if="!isLoading">Load Winners</span>
+            <span v-else>
+              <Loader2 class="min-w-6 max-w-6 min-h-6 max-h-6 animate-spin" />
+            </span>
+          </Button>
 
           <Button class="flex items-center gap-2.5 col-span-6 py-5 w-full text-base" type="submit"
             :disabled="isLoading">

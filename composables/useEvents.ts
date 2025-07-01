@@ -1,19 +1,32 @@
 import { useQuery } from '@tanstack/vue-query'
 import { computed } from 'vue'
+import type { Participant } from '@/types'
 
-export interface Participant {
-  id: string
-  name: string
-  enabled: boolean
-}
-
-export interface DungeonEvent {
+interface DungeonBase {
   id: string
   type: string
-  participants: string
+  participants: Array<Participant>
   created_at: string
   updated_at: string
   guild: string
+}
+
+export interface DungeonEvent extends DungeonBase {
+  guilds: { id: string, user_guilds: { user_id: string } }
+  winners: Array<{
+    id: string
+    event: string
+    tag: string
+    participants: Array<Participant>
+    is_deleted: boolean
+    created_at: string
+    tags: {
+      id: string
+      name: string
+      color: string
+      symbol: string
+    }
+  }>
 }
 
 export function useEvents() {
@@ -25,23 +38,31 @@ export function useEvents() {
     queryFn: async () => {
       if (!user.value?.id) return { events: [], total: 0 }
 
-      // First get the user's guild
-      const { data: userGuild, error: userGuildError } = await supabase
-        .from('user_guilds')
-        .select('guilds (id)')
-        .eq('user_id', user.value.id)
-        .single() as { data: UserGuild | null, error: Error | null }
-
-      if (userGuildError || !userGuild) {
-        console.error(userGuildError)
-        return { events: [], total: 0 }
-      }
-
-      // Then get all events from that guild
+      // Get events with guild join and winners in a single query
       const { data, error, count } = await supabase
         .from('events')
-        .select('*', { count: 'exact' })
-        .eq('guild', userGuild.guilds.id) as {
+        .select(`
+          *,
+          guilds!inner (
+            id,
+            user_guilds!inner (user_id)
+          ),
+          winners (
+            id,
+            event,
+            tag,
+            participants,
+            is_deleted,
+            created_at,
+            tags!inner (
+              id,
+              name,
+              color,
+              symbol
+            )
+          )
+        `, { count: 'exact' })
+        .eq('guilds.user_guilds.user_id', user.value.id) as {
           data: DungeonEvent[] | null
           error: Error | null
           count: number | null

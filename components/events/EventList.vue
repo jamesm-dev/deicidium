@@ -9,7 +9,7 @@ import {
   getSortedRowModel,
   useVueTable,
 } from '@tanstack/vue-table'
-import { ChevronLeft, ChevronRight, ChevronsUpDown, EllipsisVertical, Pencil, Trash2, Users } from 'lucide-vue-next'
+import { ChevronLeft, ChevronRight, ChevronsUpDown, EllipsisVertical, Package, Pencil, Trash2, Users } from 'lucide-vue-next'
 
 import { h, ref } from 'vue'
 import { cn, valueUpdater } from '@/lib/utils'
@@ -32,26 +32,43 @@ import {
 } from '@/components/ui/dropdown-menu'
 import type { DungeonEvent } from '@/composables/useEvents'
 import { DUNGEONS } from '@/types/enum'
-import { Badge } from '@/components/ui/badge'
 import moment from 'moment'
+import type { Participant, Tag } from '@/types'
 
-interface EventWithTags extends DungeonEvent {
-  tags: string[]
+interface EventData {
+  id: string
+  name: string
+  participants: Array<Participant>
+  tags: Array<Tag>
+  created_at: string
+  raw_event: DungeonEvent
 }
 
 const props = defineProps<{
-  onEventUpdate?: (event: DungeonEvent) => void
-  onEventDelete?: (event: DungeonEvent) => void
+  onRaffle?: (data: DungeonEvent) => void
+  onUpdate?: (data: DungeonEvent) => void
+  onDelete?: (data: DungeonEvent) => void
 }>()
 
 const { events, isLoading } = useEvents()
 
-const eventsWithTags = computed(() => events.value.map((event: DungeonEvent) => ({ ...event, tags: ['frozen tear', 'rare scroll', 'tier 2 rare item'] })))
+const eventsFormatted = computed(() => events.value.map((event: DungeonEvent) => ({
+  id: event.id,
+  name: event.type,
+  participants: event.participants,
+  tags: event.winners
+    .flatMap((winner) => winner.tags)
+    .filter((tag, index, self) =>
+      index === self.findIndex((t) => t.symbol === tag.symbol)
+    ),
+  created_at: event.created_at,
+  raw_event: event,
+})))
 
-const columnHelper = createColumnHelper<EventWithTags>()
+const columnHelper = createColumnHelper<EventData>()
 
 const columns = [
-  columnHelper.accessor('type', {
+  columnHelper.accessor('name', {
     header: ({ column }) => {
       return h(Button, {
         class: '!px-0 !bg-transparent !text-white',
@@ -59,7 +76,7 @@ const columns = [
         onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
       }, () => ['Dungeon', h(ChevronsUpDown, { class: 'ml-2 max-w-[10px] max-h-[10px]', })])
     },
-    cell: ({ row }) => h('div', { class: 'min-w-[200px]' }, DUNGEONS[row.getValue('type') as keyof typeof DUNGEONS]),
+    cell: ({ row }) => h('div', { class: 'min-w-[200px]' }, DUNGEONS[row.getValue('name') as keyof typeof DUNGEONS]),
     filterFn: (row, id, value) => {
       const dungeonKey = row.getValue(id) as keyof typeof DUNGEONS
       const dungeonName = DUNGEONS[dungeonKey]
@@ -83,7 +100,8 @@ const columns = [
     },
     cell: ({ row }) => {
       const participants = row.getValue('participants') as Array<Participant> ?? []
-      const enabledCount = participants.filter(participant => participant.enabled).length
+      const enabled = participants.filter(participant => participant.enabled)
+      const enabledCount = enabled.length
       const totalCount = participants.length
       const percentage = totalCount > 0 ? (enabledCount / totalCount) * 100 : 0
 
@@ -95,9 +113,15 @@ const columns = [
         iconColor = 'text-yellow-500'
       }
 
-      return h('div', { class: 'flex items-center gap-4' }, [
-        h(Users, { class: `${iconColor} max-w-4 max-h-4` }),
-        h('span', { class: '' }, `${enabledCount} / ${totalCount}`),
+      return h('div', { class: 'flex items-start' }, [
+        h('div', {
+          class: 'flex items-center gap-2.5 cursor-pointer', onClick: () => {
+            console.log(participants)
+          }
+        }, [
+          h(Users, { class: `${iconColor} max-w-4 max-h-4` }),
+          h('span', { class: '' }, `${enabledCount} / ${totalCount}`),
+        ]),
       ])
     },
     sortingFn: (rowA, rowB, columnId) => {
@@ -110,16 +134,7 @@ const columns = [
   }),
   columnHelper.accessor('tags', {
     header: () => h('div', { class: '!px-0 !bg-transparent !text-white' }, 'Tags'),
-    cell: ({ row }) => h('div', { class: 'flex flex-wrap gap-2' }, (row.getValue('tags') as string[] ?? []).map((tag) => {
-      const formattedTag = (param: string) => {
-        if (param === 'frozen tear') return 'FT'
-        if (param === 'rare scroll') return 'SCROLL'
-        if (param === 'tier 2 rare item') return 'T2'
-        return param
-      }
-
-      return h(Badge, { class: 'font-mono text-[10px] uppercase' }, formattedTag(tag))
-    })),
+    cell: ({ row }) => h('div', { class: 'flex flex-wrap gap-2' }, (row.getValue('tags') as Array<Tag> ?? []).map((tag) => h('div', { class: 'font-mono text-[10px] uppercase text-white px-2 py-1', style: { backgroundColor: tag.color } }, tag.name))),
   }),
   columnHelper.accessor('created_at', {
     header: ({ column }) => {
@@ -145,14 +160,20 @@ const columns = [
           ),
           h(DropdownMenuContent, {}, () => [
             h(DropdownMenuItem, {
-              onClick: () => props.onEventUpdate?.(row.original),
+              onClick: () => props.onRaffle?.(row.original.raw_event),
+            }, () => [
+              h(Package, { class: 'mr-2 h-4 w-4' }),
+              'Raffle'
+            ]),
+            h(DropdownMenuItem, {
+              onClick: () => props.onUpdate?.(row.original.raw_event),
             }, () => [
               h(Pencil, { class: 'mr-2 h-4 w-4' }),
               'Edit'
             ]),
             h(DropdownMenuItem, {
               class: 'text-red-600',
-              onClick: () => props.onEventDelete?.(row.original),
+              onClick: () => props.onDelete?.(row.original.raw_event),
             }, () => [
               h(Trash2, { class: 'mr-2 h-4 w-4' }),
               'Delete'
@@ -168,7 +189,7 @@ const sorting = ref<SortingState>([])
 const columnFilters = ref<ColumnFiltersState>([])
 
 const table = useVueTable({
-  data: eventsWithTags,
+  data: eventsFormatted,
   columns,
   getCoreRowModel: getCoreRowModel(),
   getPaginationRowModel: getPaginationRowModel(),
@@ -187,8 +208,8 @@ const table = useVueTable({
   <div class="w-full">
     <div class="flex items-center gap-2">
       <Input class="bg-white border max-w-sm" placeholder="Search events..."
-        :model-value="table.getColumn('type')?.getFilterValue() as string"
-        @update:model-value="table.getColumn('type')?.setFilterValue($event)" />
+        :model-value="table.getColumn('name')?.getFilterValue() as string"
+        @update:model-value="table.getColumn('name')?.setFilterValue($event)" />
     </div>
 
     <div class="mt-4">

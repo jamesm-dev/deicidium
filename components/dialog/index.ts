@@ -1,0 +1,7 @@
+export { default as DialogEventCreate } from './EventCreate.vue'
+export { default as DialogEventUpdate } from './EventUpdate.vue'
+export { default as DialogMagicLink } from './MagicLink.vue'
+export { default as DialogMemberCreate } from './MemberCreate.vue'
+export { default as DialogMemberUpdate } from './MemberUpdate.vue'
+export { default as DialogWinnerCreate } from './WinnerCreate.vue'
+export { default as DialogWinnerUpdate } from './WinnerUpdate.vue'

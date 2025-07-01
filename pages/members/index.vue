@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { MemberList } from '@/components/members/member-list';
+import { MemberList } from '@/components/members';
 import { UserPlus } from 'lucide-vue-next';
 import { toast } from 'vue-sonner';
 

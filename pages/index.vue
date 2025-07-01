@@ -113,7 +113,7 @@ const handleRaffle = async (raffleType: string) => {
         </div>
       </div>
 
-      <div class="flex flex-col gap-10 mt-20">
+      <div class="flex flex-col gap-10 mt-10">
         <div class="flex flex-col">
           <h1 class="font-semibold text-primary text-3xl">Dungeon— Tiarak</h1>
           <span class="font-mono font-semibold text-neutral-500 text-sm">
